@@ -1,2 +1,5 @@
 # Ignore checkpoints
 .ipynb_checkpoints
+
+# Ignore test case data
+*_test.txt
