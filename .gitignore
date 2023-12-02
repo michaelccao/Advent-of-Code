@@ -3,3 +3,6 @@
 
 # Ignore test case data
 *_test.txt
+
+# Ignore sandbox
+sandbox*
