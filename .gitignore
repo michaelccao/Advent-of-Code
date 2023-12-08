@@ -2,7 +2,7 @@
 .ipynb_checkpoints
 
 # Ignore test case data
-*_test.txt
+*_test*.txt
 
 # Ignore sandbox
 sandbox*
