@@ -6,3 +6,6 @@
 
 # Ignore sandbox
 sandbox*
+
+# Ignore data
+*/Data/*
