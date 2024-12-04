@@ -9,3 +9,7 @@ sandbox*
 
 # Ignore data
 */Data/*
+
+# Added by cargo
+
+*/Rust/target
