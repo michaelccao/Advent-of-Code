@@ -1,7 +1,7 @@
 use crate::helper::read_data;
 
 use std::vec::Vec;
-use std::collections::HashSet;
+use std::collections::{HashSet,HashMap};
 
 
 pub fn main() {
@@ -39,13 +39,28 @@ fn get_grid(data: &String) -> (Vec<Vec<char>>, usize, usize) {
 }
 
 fn traverse(grid: &Vec<Vec<char>>, i0: &usize, j0: &usize) -> (bool, usize) {
-    let mut visited: HashSet<(usize, usize, usize)> = HashSet::new();
+    let mut visited: HashMap<(usize, usize), HashSet<usize>> = HashMap::new();
 
     let mut i: usize = *i0;
     let mut j: usize = *j0;
 
     let mut heading: usize = 0;
-    let mut velocity: [(usize, usize); 4] = [(-1, 0), (0, 1), (1, 0), (0, -1)];
+    let vel: [(i32, i32); 4] = [(-1, 0), (0, 1), (1, 0), (0, -1)];
+
+    for _ in 0..10 {
+        match visited.get_mut(&(i, j)) {
+            None => {
+                visited.insert((i, j), HashSet::from([heading]));
+            },
+            Some(headings) => {
+                if headings.contains(&heading) {
+                    return (true, 0)
+                } else {
+                    headings.insert(heading);
+                }
+            }
+        }
+    }
 
     return (false, visited.len())
 }
