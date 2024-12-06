@@ -6,11 +6,15 @@ use std::collections::{HashSet,HashMap};
 
 pub fn main() {
     
-    let data = read_data("../Data/Day6_Test.txt");
+    let data = read_data("../Data/Day6.txt");
 
-    let (grid, i0, j0) = get_grid(&data);
+    let (mut grid, i0, j0) = get_grid(&data);
     
-    println!("{:?}", traverse(&grid, &i0, &j0));
+    let (_, visited) = traverse(&grid, &i0, &j0);
+
+    println!("{}", visited.len());
+
+    println!("{}", find_obstacles(&mut grid, &i0, &j0, &visited));
 }
 
 fn get_grid(data: &String) -> (Vec<Vec<char>>, usize, usize) {
@@ -38,29 +42,67 @@ fn get_grid(data: &String) -> (Vec<Vec<char>>, usize, usize) {
 
 }
 
-fn traverse(grid: &Vec<Vec<char>>, i0: &usize, j0: &usize) -> (bool, usize) {
-    let mut visited: HashMap<(usize, usize), HashSet<usize>> = HashMap::new();
+fn traverse(grid: &Vec<Vec<char>>, i0: &usize, j0: &usize) -> (bool, HashMap<(i32, i32), HashSet<usize>>) {
+    let mut visited: HashMap<(i32, i32), HashSet<usize>> = HashMap::new();
 
-    let mut i: usize = *i0;
-    let mut j: usize = *j0;
+    let mut i: i32 = *i0 as i32;
+    let mut j: i32 = *j0 as i32;
+
+    let rows = grid.len();
+    let cols = grid[0].len();
 
     let mut heading: usize = 0;
     let vel: [(i32, i32); 4] = [(-1, 0), (0, 1), (1, 0), (0, -1)];
 
-    for _ in 0..10 {
+    while i >= 0 && i < rows as i32 && j >= 0 && j < cols as i32 {
         match visited.get_mut(&(i, j)) {
             None => {
                 visited.insert((i, j), HashSet::from([heading]));
             },
             Some(headings) => {
                 if headings.contains(&heading) {
-                    return (true, 0)
+                    return (true, visited);
                 } else {
                     headings.insert(heading);
                 }
             }
+        };
+
+        let (di, dj) = vel[heading];
+
+        let i2 = i + di;
+        let j2 = j + dj;
+
+        if i2 >= 0 && i2 < rows as i32 && j2 >= 0 && j2 < cols as i32 && grid[i2 as usize][j2 as usize] == '#' {
+            heading = (heading + 1) % 4;
+        } else {
+            i = i2;
+            j = j2;
         }
+
     }
 
-    return (false, visited.len())
+    return (false, visited);
+}
+
+fn find_obstacles(grid: &mut Vec<Vec<char>>, i0: &usize, j0: &usize, visited: &HashMap<(i32, i32), HashSet<usize>>) -> i32 {
+    let mut obstacles:i32 = 0;
+
+    for ((i, j), _) in visited {
+        if *i as usize == *i0 && *j as usize == *j0 {
+            continue
+        }
+
+        grid[*i as usize][*j as usize] = '#';
+
+        if traverse(&grid, i0, j0).0 {
+            obstacles += 1;
+        }
+
+        grid[*i as usize][*j as usize] = '.';
+    }
+
+    obstacles
+
+    
 }
