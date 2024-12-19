@@ -1,5 +1,5 @@
 use crate::helper::read_data;
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::vec::Vec;
 
 pub fn main() {
@@ -15,7 +15,7 @@ pub fn main() {
     for design in designs {
         let poss = match_design(&towels, design, &mut cache);
 
-        p1 += if poss > 0 {1} else {0};
+        p1 += if poss > 0 { 1 } else { 0 };
         p2 += poss;
     }
 
@@ -36,13 +36,12 @@ fn get_towels_and_designs(data: &String) -> (Vec<&str>, Vec<&str>) {
 }
 
 fn match_design<'a>(towels: &Vec<&str>, design: &'a str, cache: &mut HashMap<&'a str, u64>) -> u64 {
-
     if cache.contains_key(design) {
-        return cache.get(design).unwrap().clone()
+        return cache.get(design).unwrap().clone();
     }
 
     if design.len() == 0 {
-        return 1
+        return 1;
     }
 
     cache.insert(design, 0);
