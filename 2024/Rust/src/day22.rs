@@ -1,6 +1,5 @@
 use crate::helper::read_data;
 use std::collections::{HashMap, VecDeque};
-use std::hash::Hash;
 use std::vec::Vec;
 
 pub fn main() {
@@ -50,7 +49,7 @@ fn best_buy(secrets: &Vec<i64>) -> i64 {
         let mut secret = *secret;
         let mut moves: VecDeque<i64> = VecDeque::new();
 
-        for j in 0..2000_usize {
+        for _ in 0..2000_usize {
             let secret2: i64 = generate_secret(secret, 1);
 
             moves.push_back((secret2 % 10) - (secret % 10));
@@ -76,7 +75,7 @@ fn best_buy(secrets: &Vec<i64>) -> i64 {
     }
 
     buys.iter()
-        .map(|(moves, prices)| prices.iter().map(|(ind, price)| price).sum::<i64>())
+        .map(|(_moves, prices)| prices.iter().map(|(_ind, price)| price).sum::<i64>())
         .max()
         .unwrap()
 }
