@@ -1,5 +1,6 @@
 {
     "rust-analyzer.linkedProjects": [
-        "2024/Rust/Cargo.toml"
+        "2024/Rust/Cargo.toml",
+        "2015/Rust/Cargo.toml"
     ]
 }
