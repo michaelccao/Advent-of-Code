@@ -110,13 +110,13 @@ fn get_builds(equipment: &Vec<&Vec<(u32, u32, u32)>>, part2: bool) -> HashMap<(u
 
 fn is_good_build(build: &(u32, u32), boss: &Vec<u32>) -> bool {
     let boss_hp = boss[0];
-    let boss_atk = boss[1];
+    let mut boss_atk = boss[1];
     let boss_def = boss[2];
 
-    let (atk, def) = *build;
+    let (mut atk, def) = *build;
 
     if atk <= boss_def {
-        return false;
+        atk = boss_def + 1;
     }
 
     let boss_kill = boss_hp / (atk - boss_def)
@@ -127,7 +127,7 @@ fn is_good_build(build: &(u32, u32), boss: &Vec<u32>) -> bool {
         };
 
     if def >= boss_atk {
-        return true;
+        boss_atk = def + 1;
     }
 
     let we_die = 100 / (boss_atk - def) + if 100 % (boss_atk - def) == 0 { 0 } else { 1 };
