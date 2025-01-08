@@ -81,6 +81,13 @@ fn is_valid(floors: &Vec<Vec<(&str, &str)>>) -> bool {
 
 }
 
+// This can be improved
+
+// There is never a point in moving two objects down
+// There is never a point in moving an object down if there is nothing below it
+
+// No point moving only one object up if no objects above 
+
 fn valid_moves<'a>(floors: &Vec<Vec<(&'a str, &'a str)>>, elevator: usize) -> Vec<(Vec<Vec<(&'a str, &'a str)>>, usize)> {
 
     let mut moves: Vec<(Vec<Vec<(&str, &str)>>, usize)> = Vec::new();
