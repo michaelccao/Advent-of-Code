@@ -3,6 +3,14 @@ use regex::Regex;
 use std::collections::{HashMap, HashSet};
 use std::vec::Vec;
 
+#[derive(Debug, Clone)]
+struct Layout {
+    chips: Vec<i8>,
+    gens: Vec<i8>,
+    elevator: i8,
+    floors: i8,
+}
+
 pub fn main() {
     let data: String = read_data("../Data/Day11.txt");
 
@@ -10,21 +18,168 @@ pub fn main() {
 
     let mut floors2: Vec<Vec<(&str, &str)>> = floors.clone();
 
-    floors2[1].push(("elerium", "generator"));
-    floors2[1].push(("elerium", "microchip"));
-    floors2[1].push(("dilithium", "generator"));
-    floors2[1].push(("dilithium", "microchip"));
+    let (chips, gens) = get_components(&data);
 
-    floors2[1].sort();
+    let layout = Layout {
+        chips,
+        gens,
+        elevator: 0,
+        floors: data.lines().collect::<Vec<_>>().len() as i8
+    };
+
+    println!("{layout:?}");
+    println!("{}", layout.is_valid());
+
+    // floors2[1].push(("elerium", "generator"));
+    // floors2[1].push(("elerium", "microchip"));
+    // floors2[1].push(("dilithium", "generator"));
+    // floors2[1].push(("dilithium", "microchip"));
+
+    // floors2[1].sort();
 
     // let p1: u32 = shortest_moves(&floors);
     // println!("{p1}");
 
     // println!("{}", floor_is_valid(&vec![("curium", "generator"), ("curium", "microchip"), ("plutonium", "generator"), ("promethium", "microchip"), ("ruthenium", "generator")]));
 
-    let p2: u32 = shortest_moves(&floors2);
+    // let p2: u32 = shortest_moves(&floors2);
 
-    println!("{p2}");
+    // println!("{p2}");
+}
+
+fn get_components(data: &String) -> (Vec<i8>, Vec<i8>) {
+    let mut chips: HashMap<String, i8> = HashMap::new();
+    let mut gens: HashMap<String, i8> = HashMap::new();
+
+    let re =  Regex::new(r"a (\S*?)-compatible (microchip)|a (\S*?) (generator)").unwrap();
+
+    for (floor, line) in data.lines().enumerate() {
+        let floor = floor as i8;
+
+        for cap in re.captures_iter(line) {
+            let (_, [element, component]) = cap.extract();
+
+            if component == "microchip" {
+                chips.insert(element.to_string(), floor);
+            } else {
+                gens.insert(element.to_string(), floor);
+            }
+        }
+    }
+
+    let mut elements: Vec<&String> = chips.keys().collect();
+    elements.sort();
+
+    let mut chips_vec: Vec<i8> = Vec::new();
+    let mut gens_vec: Vec<i8> = Vec::new();
+
+    for element in elements {
+        chips_vec.push(chips[element]);
+        gens_vec.push(gens[element]);
+    }
+
+    (chips_vec, gens_vec)
+}
+
+impl Layout {
+    fn is_valid(&self) -> bool {
+        let chips = &self.chips;
+        let gens = &self.gens;
+
+        for i in 0..chips.len() {
+            if chips[i] == gens[i] {
+                continue;
+            }
+    
+            for j in 0..gens.len() {
+                if chips[i] == gens[j] {
+                    return false;
+                }
+            }
+        }
+    
+        true
+    }
+
+    fn move_chips(&self, to_move: Vec<usize>, shift: i8) -> Option<Layout> {
+        let mut layout2: Layout = self.clone();
+
+        for c in to_move {
+            layout2.chips[c] += shift;
+        }
+
+        if layout2.is_valid() {
+            return Some(layout2);
+        } else {
+            return None;
+        }
+    }
+
+    fn move_gens(&self, to_move: Vec<usize>, shift: i8) -> Option<Layout> {
+        let mut layout2: Layout = self.clone();
+
+        for c in to_move {
+            layout2.gens[c] += shift;
+        }
+
+        if layout2.is_valid() {
+            return Some(layout2);
+        } else {
+            return None;
+        }
+    }
+
+    fn move_pair(&self, to_move: usize, shift: i8) -> Option<Layout> {
+        let mut layout2: Layout = self.clone();
+
+        layout2.chips[to_move] += shift;
+        layout2.gens[to_move] += shift;
+        
+        if layout2.is_valid() {
+            return Some(layout2);
+        } else {
+            return None;
+        }
+    }
+
+    fn next_moves(&self) {
+        let mut layouts: Vec<Layout> = Vec::new();
+
+        for i in 0..self.chips.len() {
+            if self.chips[i] == self.elevator {
+                
+                if self.elevator > 0 {
+                    if let Some(layout2) = self.move_chips(vec![i], -1) {
+                        layouts.push(layout2);
+                    }
+                }
+
+                if self.elevator < self.floors - 1 {
+                    if let Some(layout2) = self.move_chips(vec![i], 1) {
+                        layouts.push(layout2);
+                    }
+                }
+
+                for j in i+1..self.chips.len() {
+                    if self.chips[j] == self.elevator {
+                        if self.elevator > 0 {
+                            if let Some(layout2) = self.move_chips(vec![i, j], -1) {
+                                layouts.push(layout2);
+                            }
+                        }
+
+                        if self.elevator < self.floors - 1 {
+                            if let Some(layout2) = self.move_chips(vec![i, j], 1) {
+                                layouts.push(layout2);
+                            }
+                        }
+                    }
+                }
+
+
+            }
+        }
+    }
 }
 
 fn get_floors(data: &String) -> (Vec<Vec<(&str, &str)>>, HashMap<(&str, &str), usize>) {
