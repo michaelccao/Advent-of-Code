@@ -101,7 +101,7 @@ impl Layout {
         true
     }
 
-    fn move_chips(&self, to_move: Vec<usize>, shift: i8) -> Option<Layout> {
+    fn move_chips(&self, to_move: HashSet<usize>, shift: i8) -> Option<Layout> {
         let mut layout2: Layout = self.clone();
 
         for c in to_move {
@@ -115,7 +115,7 @@ impl Layout {
         }
     }
 
-    fn move_gens(&self, to_move: Vec<usize>, shift: i8) -> Option<Layout> {
+    fn move_gens(&self, to_move: HashSet<usize>, shift: i8) -> Option<Layout> {
         let mut layout2: Layout = self.clone();
 
         for c in to_move {
@@ -142,43 +142,69 @@ impl Layout {
         }
     }
 
-    fn next_moves(&self) {
+    fn next_moves(&self) -> Vec<Layout> {
         let mut layouts: Vec<Layout> = Vec::new();
 
         for i in 0..self.chips.len() {
             if self.chips[i] == self.elevator {
-                
-                if self.elevator > 0 {
-                    if let Some(layout2) = self.move_chips(vec![i], -1) {
-                        layouts.push(layout2);
-                    }
-                }
 
-                if self.elevator < self.floors - 1 {
-                    if let Some(layout2) = self.move_chips(vec![i], 1) {
-                        layouts.push(layout2);
-                    }
-                }
-
-                for j in i+1..self.chips.len() {
-                    if self.chips[j] == self.elevator {
-                        if self.elevator > 0 {
-                            if let Some(layout2) = self.move_chips(vec![i, j], -1) {
-                                layouts.push(layout2);
-                            }
+                if self.gens[i] == self.elevator {
+                    if self.elevator > 0 {
+                        if let Some(layout2) = self.move_pair(i, -1) {
+                            layouts.push(layout2);
                         }
+                    }
 
-                        if self.elevator < self.floors - 1 {
-                            if let Some(layout2) = self.move_chips(vec![i, j], 1) {
-                                layouts.push(layout2);
-                            }
+                    if self.elevator < self.floors - 1 {
+                        if let Some(layout2) = self.move_pair(i, 1) {
+                            layouts.push(layout2);
                         }
                     }
                 }
 
+                for j in i..self.chips.len() {
+                    if self.chips[j] != self.elevator {
+                        continue;
+                    }
+
+                    let to_move: HashSet<usize> = HashSet::from([i, j]);
+
+                    if self.elevator > 0 {
+                        if let Some(layout2) = self.move_chips(to_move.clone(), -1) {
+                            layouts.push(layout2);
+                        }
+                    }
+
+                    if self.elevator < self.floors - 1 {
+                        if let Some(layout2) = self.move_chips(to_move.clone(), 1) {
+                            layouts.push(layout2);
+                        }
+                    }
+                }
 
             }
+
+            if self.gens[i] == self.elevator {
+                for j in i..self.gens.len() {
+                    let to_move: HashSet<usize> = HashSet::from([i, j]);
+
+                    if self.elevator > 0 {
+                        if let Some(layout2) = self.move_gens(to_move.clone(), -1) {
+                            layouts.push(layout2);
+                        }
+                    }
+
+                    if self.elevator < self.floors - 1 {
+                        if let Some(layout2) = self.move_gens(to_move.clone(), 1) {
+                            layouts.push(layout2);
+                        }
+                    }
+                }
+            }
         }
+
+        layouts
+
     }
 }
 
