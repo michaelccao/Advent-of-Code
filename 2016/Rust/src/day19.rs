@@ -9,8 +9,16 @@ pub fn main() {
 
     println!("{}", white_elephant(num_elves, false));
 
-    println!("{}", white_elephant(num_elves, true));
-}
+    // // Found pattern doing slow way
+    // for i in 2..1000_u32 {
+    //     println!("{}, {}",i, white_elephant(i, true));
+    //     }
+
+    println!("{}", white_elephant2(num_elves));
+
+    }
+
+    
 
 fn white_elephant(num_elves: u32, part2: bool) -> u32 {
 
@@ -51,6 +59,28 @@ fn white_elephant(num_elves: u32, part2: bool) -> u32 {
         current_elf = elves[&current_elf].0;
 
 
+    }
+
+}
+
+fn white_elephant2(num_elves: u32) -> u32 {
+
+    let mut i: u32 = 1;
+
+    while i < num_elves {
+        i *= 3;
+    }
+
+    if i == num_elves {
+        return i
+    } else {
+        i /= 3;
+    }
+
+    if num_elves <= 2*i {
+        return num_elves - i
+    } else {
+        3*i - (3*i - num_elves)*2
     }
 
 }
