@@ -11,6 +11,7 @@ pub fn main() {
     println!("{p1}");
 
     // Too lazy to do this "properly", just brute force it LMAO
+    // Only 8! or 40,320 permutations to test
     for password in "abcdefgh".chars().permutations(8) {
         let password: String = password.iter().collect::<String>();
         if scramble_password(&password[..], &instructions) == "fbgdceah".to_string() {
