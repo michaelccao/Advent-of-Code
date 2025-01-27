@@ -9,10 +9,9 @@ pub fn main() {
 
     let p1: String = find_root(&discs);
 
-    let p2 = correct_weight(&p1, &discs);
+    let p2: u32 = correct_weight(&p1, &discs);
 
     println!("{p1}\n{p2}");
-
 }
 
 #[derive(PartialEq, Eq, Hash, Debug)]
@@ -20,7 +19,7 @@ struct Disc {
     name: String,
     weight: u32,
     children: Option<Vec<String>>,
-    parent: Option<String>
+    parent: Option<String>,
 }
 
 fn get_discs(data: &String) -> HashMap<String, Disc> {
@@ -44,12 +43,11 @@ fn get_discs(data: &String) -> HashMap<String, Disc> {
                     name: child.clone(),
                     weight: 0,
                     children: None,
-                    parent: Some(name.clone())
+                    parent: Some(name.clone()),
                 };
 
                 discs.insert(child.clone(), child_disc);
             }
-
 
             children.push(child);
         }
@@ -58,16 +56,15 @@ fn get_discs(data: &String) -> HashMap<String, Disc> {
             disc.weight = weight;
             disc.children = Some(children);
         } else {
-            let disc = Disc {
+            let disc: Disc = Disc {
                 name: name.clone(),
                 weight: weight,
                 children: Some(children),
-                parent: None
+                parent: None,
             };
 
             discs.insert(name, disc);
         }
-
     }
 
     discs
@@ -88,31 +85,39 @@ fn total_weight(disc: &Disc, discs: &HashMap<String, Disc>) -> u32 {
         return disc.weight;
     }
 
-    return disc.weight + disc.children.clone().unwrap().iter().map(|disc_name| total_weight(&discs[disc_name], discs)).sum::<u32>();
+    return disc.weight
+        + disc
+            .children
+            .clone()
+            .unwrap()
+            .iter()
+            .map(|disc_name| total_weight(&discs[disc_name], discs))
+            .sum::<u32>();
 }
 
 fn is_balanced(disc: &Disc, discs: &HashMap<String, Disc>) -> bool {
-
     if disc.children.is_none() {
-        return true
+        return true;
     }
 
     let children: Vec<String> = disc.children.clone().unwrap();
 
-    let child_weights: Vec<u32> = children.iter().map(|child_name| total_weight(&discs[child_name], discs)).collect();
+    let child_weights: Vec<u32> = children
+        .iter()
+        .map(|child_name| total_weight(&discs[child_name], discs))
+        .collect();
 
-    child_weights.iter().all(|&weight| weight == child_weights[0])
+    child_weights
+        .iter()
+        .all(|&weight| weight == child_weights[0])
 }
 
 fn correct_weight(root: &String, discs: &HashMap<String, Disc>) -> u32 {
-
-    let mut disc = &discs[root];
+    let mut disc: &Disc = &discs[root];
 
     'outer: loop {
-
         for child_name in disc.children.clone().unwrap() {
-
-            let child_disc = &discs[&child_name];
+            let child_disc: &Disc = &discs[&child_name];
 
             if !is_balanced(child_disc, discs) {
                 disc = child_disc;
@@ -126,9 +131,29 @@ fn correct_weight(root: &String, discs: &HashMap<String, Disc>) -> u32 {
 
     let children: Vec<String> = parent_disc.children.clone().unwrap();
 
-    let child_weights: Vec<u32> = parent_disc.children.clone().unwrap().iter().map(|child_name| total_weight(&discs[child_name], discs)).collect();
+    let child_weights: Vec<u32> = parent_disc
+        .children
+        .clone()
+        .unwrap()
+        .iter()
+        .map(|child_name| total_weight(&discs[child_name], discs))
+        .collect();
 
-    
+    let weight = child_weights[0];
+
+    for i in 1..children.len() {
+        if child_weights[i] != weight {
+            if i != 1 || child_weights[2] == weight {
+                let bad_child: &Disc = &discs[&children[i]];
+
+                return bad_child.weight + weight - child_weights[i];
+            } else {
+                let bad_child: &Disc = &discs[&children[0]];
+
+                return bad_child.weight + weight - child_weights[0];
+            }
+        }
+    }
 
     0
 }
