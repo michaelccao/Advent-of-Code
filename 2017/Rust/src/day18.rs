@@ -11,7 +11,7 @@ pub fn main() {
 
     let p1: i64 = follow_instructions(&instructions);
 
-    let p2 = deadlock(&instructions);
+    let p2: u32 = deadlock(&instructions);
 
     println!("{p1}\n{p2}");
 }
@@ -169,7 +169,7 @@ fn value(param: &str, registers: &Vec<i64>) -> i64 {
     if let Ok(val) = param.parse::<i64>() {
         val
     } else {
-        let register = param.chars().next().unwrap() as usize - a;
+        let register: usize = param.chars().next().unwrap() as usize - a;
 
         registers[register]
     }
