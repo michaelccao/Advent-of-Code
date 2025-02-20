@@ -1,6 +1,6 @@
 mod helper;
-mod day21;
+mod day22;
 
 fn main() {
-    day21::main();
+    day22::main();
 }
