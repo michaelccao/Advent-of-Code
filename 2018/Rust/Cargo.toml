@@ -1,0 +1,9 @@
+[package]
+name = "Rust"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+md5 = "0.7.0"
+regex = "1.11.1"
+itertools = "0.14.0"
