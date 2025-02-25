@@ -3,5 +3,5 @@ use std::collections::{HashMap, HashSet};
 use std::vec::Vec;
 
 pub fn main() {
-    let data: String = read_data("../Data/Day1.txt");
+    let data: String = read_data("../Data/Day01.txt");
 }
