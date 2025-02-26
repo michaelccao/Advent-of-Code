@@ -56,7 +56,6 @@ fn find_overlaps(claims: &Vec<(usize, usize, usize, usize)>) -> (u32, usize) {
                 if tiles[row][col] > 1 {
                     overlap = true;
                 }
-                tiles[row][col] += 1;
             }
         }
 
