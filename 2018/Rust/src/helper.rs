@@ -19,7 +19,6 @@ pub fn read_data(path_str: &str) -> String {
     data
 }
 
-
 pub fn neighbors(i: usize, j: usize, rows: usize, cols: usize, diags: bool) -> Vec<(usize, usize)> {
     let mut nbs: Vec<(usize, usize)> = Vec::new();
 
