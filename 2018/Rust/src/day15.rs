@@ -1,6 +1,5 @@
 use crate::helper::read_data;
-use std::collections::{HashMap, HashSet, VecDeque};
-use std::io::{Read, stdin};
+use std::collections::{HashMap, VecDeque};
 
 pub fn main() {
     let data: String = read_data("../Data/Day15.txt");
@@ -11,7 +10,9 @@ pub fn main() {
 
     println!("{p1}");
 
-    // find_best_move(&grid, 3, 20, 'E');
+    let p2: i32 = find_elf_win(&grid, &units);
+
+    println!("{p2}");
 }
 
 fn get_grid(data: &String) -> (Vec<Vec<String>>, HashMap<String, (usize, usize, i32)>) {
@@ -106,7 +107,8 @@ fn resolve_fight(grid: &Vec<Vec<String>>, units: &HashMap<String, (usize, usize,
             units.insert(callsign.clone(), (i2, j2, hp));
 
             // Attack
-            let mut weakest_enemy: (i32, usize, usize, String) = (201, i2, j2, grid[i2][j2].clone());
+            let mut weakest_enemy: (i32, usize, usize, String) =
+                (201, i2, j2, grid[i2][j2].clone());
 
             for (ei, ej) in [(i2 - 1, j2), (i2, j2 - 1), (i2, j2 + 1), (i2 + 1, j2)] {
                 let callsign: String = grid[ei][ej].clone();
@@ -140,12 +142,107 @@ fn resolve_fight(grid: &Vec<Vec<String>>, units: &HashMap<String, (usize, usize,
         }
 
         rounds += 1;
-
     }
 
     let score: i32 = units.values().map(|&(_, _, hp)| hp).sum::<i32>() * rounds;
 
     score
+}
+
+fn find_elf_win(grid: &Vec<Vec<String>>, units: &HashMap<String, (usize, usize, i32)>) -> i32 {
+    let mut goblins: u8 = 0;
+
+    let mut elf_power: i32 = 3;
+
+    for callsign in units.keys() {
+        let unit_type: char = callsign.chars().next().unwrap();
+
+        if unit_type == 'G' {
+            goblins += 1;
+        }
+    }
+
+    'elf_power: loop {
+        let mut rounds: i32 = 0;
+
+        let mut grid2: Vec<Vec<String>> = grid.clone();
+        let mut units2: HashMap<String, (usize, usize, i32)> = units.clone();
+
+        let mut goblins2: u8 = goblins;
+
+        elf_power += 1;
+
+        'outer: loop {
+            let mut turn_order: Vec<String> = units2.keys().cloned().collect();
+
+            turn_order.sort_by_key(|callsign| units2[callsign]);
+
+            for callsign in turn_order {
+                let c: char = callsign.chars().next().unwrap();
+
+                if !units2.contains_key(&callsign) {
+                    continue;
+                }
+
+                let (i, j, hp) = units2[&callsign];
+
+                if c == 'E' && goblins2 == 0 {
+                    break 'outer;
+                }
+
+                let enemy: char = if c == 'E' { 'G' } else { 'E' };
+
+                // Move
+                let (i2, j2) = find_best_move(&grid2, i, j, enemy);
+
+                grid2[i][j] = ".".to_string();
+                grid2[i2][j2] = callsign.clone();
+
+                units2.insert(callsign.clone(), (i2, j2, hp));
+
+                // Attack
+                let mut weakest_enemy: (i32, usize, usize, String) =
+                    (201, i2, j2, grid2[i2][j2].clone());
+
+                for (ei, ej) in [(i2 - 1, j2), (i2, j2 - 1), (i2, j2 + 1), (i2 + 1, j2)] {
+                    let callsign: String = grid2[ei][ej].clone();
+                    let unit_type = callsign.chars().next().unwrap();
+
+                    if unit_type == enemy {
+                        let (_, _, ehp) = units2[&callsign];
+
+                        if (ehp, ei, ej, callsign.clone()) < weakest_enemy {
+                            weakest_enemy = (ehp, ei, ej, callsign.clone());
+                        }
+                    }
+                }
+
+                if weakest_enemy.0 <= 200 {
+                    let (ei, ej, ehp) = units2[&weakest_enemy.3];
+
+                    let power: i32 = if enemy == 'E' {3} else {elf_power};
+
+                    if ehp > power {
+                        units2.insert(weakest_enemy.3, (ei, ej, ehp - power));
+                    } else {
+                        units2.remove(&weakest_enemy.3);
+                        grid2[ei][ej] = ".".to_string();
+
+                        if enemy == 'E' {
+                            continue 'elf_power;
+                        } else if enemy == 'G' {
+                            goblins2 -= 1;
+                        }
+                    }
+                }
+            }
+
+            rounds += 1;
+        }
+        return units2.values().map(|&(_, _, hp)| hp).sum::<i32>() * rounds;
+
+    }
+    
 }
 
 fn find_best_move(grid: &Vec<Vec<String>>, i: usize, j: usize, target: char) -> (usize, usize) {
