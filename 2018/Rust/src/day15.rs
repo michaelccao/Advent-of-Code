@@ -1,5 +1,6 @@
 use crate::helper::read_data;
 use std::collections::{HashMap, HashSet, VecDeque};
+use std::io::{Read, stdin};
 
 pub fn main() {
     let data: String = read_data("../Data/Day15.txt");
@@ -10,22 +11,28 @@ pub fn main() {
 
     println!("{p1}");
 
+    // find_best_move(&grid, 3, 20, 'E');
 }
 
-fn get_grid(data: &String) -> (Vec<Vec<(char, i32)>>, HashSet<(usize, usize)>) {
-    let mut grid: Vec<Vec<(char, i32)>> = Vec::new();
-    let mut units: HashSet<(usize, usize)> = HashSet::new();
+fn get_grid(data: &String) -> (Vec<Vec<String>>, HashMap<String, (usize, usize, i32)>) {
+    let mut grid: Vec<Vec<String>> = Vec::new();
+    let mut units: HashMap<String, (usize, usize, i32)> = HashMap::new();
+
+    let mut unit_count: HashMap<char, u8> = HashMap::from([('E', 0), ('G', 0)]);
 
     for (i, line) in data.lines().enumerate() {
         let line = line.split_whitespace().next().unwrap();
-        let mut row: Vec<(char, i32)> = Vec::new();
+        let mut row: Vec<String> = Vec::new();
 
         for (j, c) in line.chars().enumerate() {
             if c == 'G' || c == 'E' {
-                row.push((c, 200));
-                units.insert((i, j));
+                let callsign: String = format!("{c}{}", unit_count[&c]);
+                row.push(callsign.clone());
+                units.insert(callsign, (i, j, 200));
+
+                *unit_count.get_mut(&c).unwrap() += 1;
             } else {
-                row.push((c, 0));
+                row.push(format!("{c}"));
             }
         }
 
@@ -35,41 +42,54 @@ fn get_grid(data: &String) -> (Vec<Vec<(char, i32)>>, HashSet<(usize, usize)>) {
     (grid, units)
 }
 
-fn resolve_fight(grid: &Vec<Vec<(char, i32)>>, units: &HashSet<(usize, usize)>) -> i32 {
-    let mut grid: Vec<Vec<(char, i32)>> = grid.clone();
-    let mut units: HashSet<(usize, usize)> = units.clone();
+fn resolve_fight(grid: &Vec<Vec<String>>, units: &HashMap<String, (usize, usize, i32)>) -> i32 {
+    let mut grid: Vec<Vec<String>> = grid.clone();
+    let mut units: HashMap<String, (usize, usize, i32)> = units.clone();
 
     let mut elves: u8 = 0;
     let mut goblins: u8 = 0;
 
-    for &(i, j) in &units {
-        if grid[i][j].0 == 'G' {
-            goblins += 1;
-        } else if grid[i][j].0 == 'E' {
+    for callsign in units.keys() {
+        let unit_type: char = callsign.chars().next().unwrap();
+
+        if unit_type == 'E' {
             elves += 1;
+        } else if unit_type == 'G' {
+            goblins += 1;
         }
     }
 
     let mut rounds: i32 = 0;
 
     'outer: loop {
-        let mut turn_order: Vec<(usize, usize)> = units.iter().cloned().collect();
+        let mut turn_order: Vec<String> = units.keys().cloned().collect();
 
-        turn_order.sort();
-
-        // println!("{turn_order:?}");
+        turn_order.sort_by_key(|callsign| units[callsign]);
 
         // println!("start round {rounds}");
 
-        print_grid(&grid);
+        for callsign in turn_order {
+            let c: char = callsign.chars().next().unwrap();
 
-        for (i, j) in turn_order {
-            let (c, h) = grid[i][j];
-
-            // Unit may already be dead from previous units' actions
-            if c == '.' {
+            // Unit may be dead from previous units' actions
+            if !units.contains_key(&callsign) {
                 continue;
             }
+
+            let (i, j, hp) = units[&callsign];
+
+            // This is where our bug occurred. A unit can kill a unit that hasn't moved
+            // A later unit can then move into dead unit's space
+            // It then moves again due to being mistaken as the dead unit
+            // The occasional extra turn speeds up combat, creating our off-by-one error
+
+            // Main reason this bug was so hard to uncover was using a bad data structure
+            // to keep track of our units
+
+            // BAD CODE HERE
+            // if c == '.' {
+            //     continue;
+            // }
 
             if (c == 'G' && elves == 0) || (c == 'E' && goblins == 0) {
                 break 'outer;
@@ -80,70 +100,61 @@ fn resolve_fight(grid: &Vec<Vec<(char, i32)>>, units: &HashSet<(usize, usize)>) 
             // Move
             let (i2, j2) = find_best_move(&grid, i, j, enemy);
 
-            grid[i][j] = ('.', 0);
-            grid[i2][j2] = (c, h);
+            grid[i][j] = ".".to_string();
+            grid[i2][j2] = callsign.clone();
 
-            units.remove(&(i, j));
-            units.insert((i2, j2));
+            units.insert(callsign.clone(), (i2, j2, hp));
 
             // Attack
-            let mut weakest_enemy: (i32, usize, usize) = (201, i2, j2);
+            let mut weakest_enemy: (i32, usize, usize, String) = (201, i2, j2, grid[i2][j2].clone());
 
             for (ei, ej) in [(i2 - 1, j2), (i2, j2 - 1), (i2, j2 + 1), (i2 + 1, j2)] {
-                let (e, h): (char, i32) = grid[ei][ej];
+                let callsign: String = grid[ei][ej].clone();
+                let unit_type = callsign.chars().next().unwrap();
 
-                if e == enemy && (h, ei, ej) < weakest_enemy {
-                    weakest_enemy = (h, ei, ej);
+                if unit_type == enemy {
+                    let (_, _, ehp) = units[&callsign];
+
+                    if (ehp, ei, ej, callsign.clone()) < weakest_enemy {
+                        weakest_enemy = (ehp, ei, ej, callsign.clone());
+                    }
                 }
             }
 
             if weakest_enemy.0 <= 200 {
-                let (_, ei, ej): (i32, usize, usize) = weakest_enemy;
+                let (ei, ej, ehp) = units[&weakest_enemy.3];
 
-                grid[ei][ej].1 -= 3;
+                if ehp > 3 {
+                    units.insert(weakest_enemy.3, (ei, ej, ehp - 3));
+                } else {
+                    units.remove(&weakest_enemy.3);
+                    grid[ei][ej] = ".".to_string();
 
-                // println!("{enemy} at {ei}, {ej} takes 3 damage from {c} at {i2}, {j2}. It has {} health remaining", grid[ei][ej].1);
-
-                if grid[ei][ej].1 <= 0 {
-                    units.remove(&(ei, ej));
-
-                    if grid[ei][ej].0 == 'E' {
+                    if enemy == 'E' {
                         elves -= 1;
-                    } else if grid[ei][ej].0 == 'G' {
+                    } else if enemy == 'G' {
                         goblins -= 1;
                     }
-
-                    grid[ei][ej] = ('.', 0);
-
-                    // println!("{enemy} died during round {}", rounds);
                 }
             }
         }
 
         rounds += 1;
 
-        // println!("end round {rounds}");
     }
 
-    print_grid(&grid);
-
-    let score: i32 = units.iter().map(|&(i, j)| grid[i][j].1).sum::<i32>() * rounds;
+    let score: i32 = units.values().map(|&(_, _, hp)| hp).sum::<i32>() * rounds;
 
     score
 }
 
-fn find_best_move(
-    grid: &Vec<Vec<(char, i32)>>,
-    i: usize,
-    j: usize,
-    target: char,
-) -> (usize, usize) {
+fn find_best_move(grid: &Vec<Vec<String>>, i: usize, j: usize, target: char) -> (usize, usize) {
     let mut nodes: VecDeque<(u32, usize, usize, usize, usize)> = VecDeque::new();
 
     for (start_i, start_j) in [(i - 1, j), (i, j - 1), (i, j + 1), (i + 1, j)] {
-        if grid[start_i][start_j].0 == target {
+        if grid[start_i][start_j].chars().next().unwrap() == target {
             return (i, j);
-        } else if grid[start_i][start_j].0 == '.' {
+        } else if grid[start_i][start_j].chars().next().unwrap() == '.' {
             nodes.push_back((1, start_i, start_j, start_i, start_j));
         }
     }
@@ -154,7 +165,7 @@ fn find_best_move(
     let mut visited: HashMap<(usize, usize), (u32, usize, usize)> = HashMap::new();
 
     while nodes.len() > 0 {
-        let (steps, i, j, start_i, start_j) = nodes.pop_back().unwrap();
+        let (steps, i, j, start_i, start_j) = nodes.pop_front().unwrap();
 
         visited.insert((i, j), (steps, start_i, start_j));
 
@@ -165,13 +176,13 @@ fn find_best_move(
         for (i2, j2) in [(i - 1, j), (i, j - 1), (i, j + 1), (i + 1, j)] {
             let steps2: u32 = steps + 1;
 
-            if grid[i2][j2].0 == '.'
+            if grid[i2][j2].chars().next().unwrap() == '.'
                 && (!visited.contains_key(&(i2, j2))
                     || (steps2, start_i, start_j) < visited[&(i2, j2)])
             {
                 visited.insert((i2, j2), (steps2, start_i, start_j));
                 nodes.push_back((steps2, i2, j2, start_i, start_j));
-            } else if grid[i2][j2].0 == target {
+            } else if grid[i2][j2].chars().next().unwrap() == target {
                 if (steps, i, j, start_i, start_j) < best_move {
                     // println!("{:?} is better than {:?}", (steps, i, j, start_i, start_j), best_move);
                     best_move = (steps, i, j, start_i, start_j);
@@ -183,20 +194,23 @@ fn find_best_move(
     (best_move.3, best_move.4)
 }
 
-fn print_grid(grid: &Vec<Vec<(char, i32)>>) {
+fn print_grid(grid: &Vec<Vec<String>>, units: &HashMap<String, (usize, usize, i32)>) {
     let mut output_string: String = String::new();
 
     for row in grid {
         let mut suffix: String = String::new();
-        for &(c, h) in row {
+        for s in row {
+            let c = s.chars().next().unwrap();
+
             output_string.push(c);
 
             if c == 'E' || c == 'G' {
-                suffix = format!("{suffix} {c}({h}),");
+                let h = units[s].2;
+                suffix = format!("{suffix} {s}({h}),");
             }
         }
         output_string = format!("{output_string}    {suffix}\n");
     }
-
+    println!("\n");
     println!("{output_string}");
 }
