@@ -1,15 +1,22 @@
 use crate::helper::read_data;
-use regex::Regex;
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 use std::vec::Vec;
 
 pub fn main() {
     let data: String = read_data("../Data/Day24.txt");
 
-    get_groups(&data);
+    let groups = get_groups(&data);
+
+    let p1: u32 = fight(&groups, 0).1;
+
+    println!("{p1}");
+
+    let p2: u32 = minimum_immune_boost(&groups);
+
+    println!("{p2}");
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct Group {
     units: u32,
     hp: u32,
@@ -18,17 +25,17 @@ struct Group {
     initiative: u32,
     weaknesses: HashSet<String>,
     immunities: HashSet<String>,
+    army: String,
 }
 
-fn get_groups(data: &String) {
-    let mut immune_army: Vec<Group> = Vec::new();
-    let mut infect_army: Vec<Group> = Vec::new();
+fn get_groups(data: &String) -> Vec<Group> {
+    let mut groups: Vec<Group> = Vec::new();
 
     let mut target_army: &str = "";
 
     for line in data.lines() {
         if line.find("units").is_none() {
-            target_army = line;
+            target_army = line.split(":").next().unwrap();
             continue;
         }
         let units: Vec<&str> = line.split(" hit points").next().unwrap().split_whitespace().collect();
@@ -76,17 +83,14 @@ fn get_groups(data: &String) {
             attack_type: attack_type,
             initiative: initiative,
             weaknesses: weaknesses,
-            immunities: immunities
+            immunities: immunities,
+            army: target_army.to_string(),
         };
 
-        if target_army == "Immune System:" {
-            immune_army.push(group);
-        } else if target_army == "Infection:" {
-            infect_army.push(group);
-        }
-        
+        groups.push(group);
     }
 
+    groups
 }
 
 impl Group {
@@ -101,4 +105,116 @@ impl Group {
             effective_power
         }
     }
+}
+
+fn fight(groups: &Vec<Group>, immune_boost: u32) -> (bool, u32) {
+    let mut groups = groups.clone();
+
+    let mut immune_system: u32 = 0;
+    let mut infection: u32 = 0;
+
+    for i in 0..groups.len() {
+        let mut group = groups[i].clone();
+        if group.army == "Immune System" {
+            group.attack += immune_boost;
+            groups[i] = group;
+            immune_system += 1;
+        } else if group.army == "Infection" {
+            infection += 1;
+        }
+    }
+
+    while immune_system > 0 && infection > 0 {
+        // Target Selection Phase
+        groups.sort_by_key(|g| (g.units*g.attack, g.initiative));
+        groups.reverse();
+
+        let mut targets: Vec<Option<usize>> = vec![None; groups.len()];
+        let mut targetted: Vec<bool> = vec![false; groups.len()];
+
+        for (i, attacker) in groups.iter().enumerate() {
+            if attacker.units == 0 {
+                continue;
+            }
+            let mut best_opponent: (u32, u32, u32, usize) = (0, 0, 0, i);
+
+            for (j, defender) in groups.iter().enumerate() {
+                if attacker.army == defender.army || targetted[j] || defender.units == 0 {
+                    continue;
+                }
+                let opponent: (u32, u32, u32, usize) = (attacker.predict_damage(defender), defender.units*defender.attack, defender.initiative, j);
+
+                if opponent > best_opponent {
+                    best_opponent = opponent
+                }
+            }
+
+            if best_opponent.0 > 0 {
+                targets[i] = Some(best_opponent.3);
+                targetted[best_opponent.3] = true;
+            }
+        }    
+
+        let mut attack_order: Vec<usize> = (0..groups.len()).collect();
+
+        attack_order.sort_by_key(|&i| groups[i].initiative);
+        attack_order.reverse();
+
+        let mut total_unit_damage: u32 = 0;
+
+        for i in attack_order {
+            let attacker = groups[i].clone();
+            if attacker.units == 0 {
+                continue;
+            }
+
+            if let Some(j) = targets[i] {
+                let mut defender = groups[j].clone();
+
+                let units_lost = attacker.predict_damage(&defender) / defender.hp;
+
+                if units_lost < defender.units {
+                    defender.units -= units_lost;
+                    total_unit_damage += units_lost;
+                } else {
+                    total_unit_damage += defender.units;
+                    defender.units = 0;
+                    
+
+                    if defender.army == "Immune System" {
+                        immune_system -= 1;
+                    } else if defender.army == "Infection" {
+                        infection -= 1;
+                    }
+                }
+
+                groups[j] = defender;
+            }
+        }
+
+        if total_unit_damage == 0 {
+            return (false, 0);
+        }
+    }
+
+    (infection == 0, groups.iter().map(|g| g.units).sum())
+}
+
+fn minimum_immune_boost(groups: &Vec<Group>) -> u32 {
+
+    let mut lb: u32 = 0;
+    let mut ub: u32 = 10000;
+
+    while lb < ub {
+        let boost: u32 = (lb + ub)/2;
+
+        if fight(groups, boost).0 {
+            ub = boost;
+        } else {
+            lb = boost+1;
+        }
+    }
+
+    fight(groups, lb).1
+
 }
