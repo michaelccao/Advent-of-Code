@@ -3,3 +3,4 @@
 2018 Day 5 - Proper approach gives simple solution
 2018 Day 8 - Cute recursion problem
 2018 Day 19 - Same basic twist as 2017 Day 23
+2019 Day 7 - Very satisfying OO implementation
