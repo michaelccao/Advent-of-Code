@@ -1,6 +1,6 @@
 use crate::helper::read_data;
-use std::collections::VecDeque;
 use itertools::Itertools;
+use std::collections::VecDeque;
 
 pub fn main() {
     let data: String = read_data("../Data/Day07.txt");
@@ -20,7 +20,7 @@ struct Thruster {
     state: ThrusterState,
 }
 #[derive(PartialEq)]
-enum ThrusterState{
+enum ThrusterState {
     WaitingOnInput,
     Stopped,
 }
@@ -184,7 +184,6 @@ impl Thruster {
 }
 
 fn run_thrusters(instructions: &Vec<i32>) -> i32 {
-
     let configurations = (0..5).permutations(5);
 
     let mut largest_output: i32 = 0;
@@ -205,10 +204,10 @@ fn run_thrusters(instructions: &Vec<i32>) -> i32 {
                 inputs: inputs,
                 state: ThrusterState::WaitingOnInput,
             };
-            
+
             output = thruster.run();
         }
-        
+
         largest_output = largest_output.max(*output.last().unwrap());
     }
 
@@ -220,7 +219,6 @@ fn feedback_thrusters(instructions: &Vec<i32>) -> i32 {
     let mut largest_output: i32 = 0;
 
     for config in configurations {
-
         let mut thrusters: Vec<Thruster> = Vec::new();
 
         for phase in config {
@@ -242,7 +240,8 @@ fn feedback_thrusters(instructions: &Vec<i32>) -> i32 {
         while thrusters.last().unwrap().state == ThrusterState::WaitingOnInput {
             let output: Vec<i32> = thrusters[active_thruster].run();
 
-            let next_thruster: &mut Thruster = &mut thrusters[(active_thruster+1) % num_thrusters];
+            let next_thruster: &mut Thruster =
+                &mut thrusters[(active_thruster + 1) % num_thrusters];
 
             if next_thruster.state == ThrusterState::WaitingOnInput {
                 for o in output {
@@ -255,7 +254,6 @@ fn feedback_thrusters(instructions: &Vec<i32>) -> i32 {
             active_thruster += 1;
             active_thruster %= num_thrusters;
         }
-
     }
 
     largest_output
