@@ -10,7 +10,7 @@ pub fn main() {
 
     println!("{p1}");
 
-    let p2: u64 = ore_to_fuel(1000000000000, &recipes);
+    let p2: u64 = ore_to_fuel(1_000_000_000_000, &recipes);
 
     println!("{p2}");
 }
