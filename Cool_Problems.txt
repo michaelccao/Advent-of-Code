@@ -6,3 +6,4 @@
 2019 Day 7 - Very satisfying OO implementation
 2019 Day 12 - Hilariously large answer for Part 2 (Mine was 326,365,108,375,488)
 2019 Day 13 - Really cool that the code instructions simulates breakout.
+2019 Day 20 - Interesting part 2 maze solved with smarter caching
