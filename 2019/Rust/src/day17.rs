@@ -53,7 +53,10 @@ fn get_map(instructions: &HashMap<i64, i64>) -> (HashMap<(i32, i32), bool>, (i32
 
     let mut robot_start: (i32, i32, i32) = (0, 0, 0);
 
+    let mut grid_str: String = String::new();
+
     for o in outputs {
+        grid_str.push(o as u8 as char);
         if o == 35 {
             grid.insert((i, j), true);
             j += 1;
@@ -69,6 +72,8 @@ fn get_map(instructions: &HashMap<i64, i64>) -> (HashMap<(i32, i32), bool>, (i32
             j += 1;
         }
     }
+
+    println!("{grid_str}");
 
     (grid, robot_start)
 }
