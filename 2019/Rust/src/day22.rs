@@ -18,18 +18,23 @@ pub fn main() {
 
     
 
+    // Every shuffle is a linear operation
+    // So the final result is still a linear operation a*i + b
+
     let d2: i64 = 119_315_717_514_047;
     let num_shuffles: i64 = 101_741_582_076_661;
 
-    let end_position: i64 = 2020;
-    let mut unshuffled = undo_shuffles(&shuffles, end_position, d2);
+    let offset = undo_shuffles(&shuffles, 0, d2);
+    let scale = (undo_shuffles(&shuffles, 1, d2) - offset + d2) % d2;
 
-    for _ in 0..10 {
-        unshuffled = undo_shuffles(&shuffles, unshuffled, d2);
-
-        println!("{unshuffled}");
-
+    for i in 0..100 {
+        assert!(undo_shuffles(&shuffles, i, d2) == (scale*i + offset) % d2);
     }
+
+    // Problem: scale*d2 easily overflows
+    // Still don't have fast way to calculate all shuffles
+
+    
 
 
 
