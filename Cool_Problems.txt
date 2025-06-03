@@ -8,3 +8,4 @@
 2019 Day 13 - Really cool that the code instructions simulates breakout.
 2019 Day 20 - Interesting part 2 maze solved with smarter caching
 2019 Day 21 - Interesting formal logic puzzling
+2019 Day 25 - Text-based RPG
