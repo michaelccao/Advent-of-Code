@@ -9,73 +9,113 @@ pub fn main() {
         .map(|(i, num)| (i as i64, num.parse::<i64>().unwrap()))
         .collect();
 
-    let (grid, robot_start) = get_map(&instructions);
+    let grid: Vec<Vec<char>> = get_map(&instructions);
 
-    let p1 = calculate_alignment_parameters(&grid);
+    let p1: usize = calculate_alignment_parameters(&grid);
 
     println!("{p1}");
+
+    let p2: i64 = run_route(&instructions);
+
+    println!("{p2}");
 }
 
-fn calculate_alignment_parameters(grid: &HashMap<(i32, i32), bool>) -> i32 {
+// Thesis: There exists a route where each non-intersection is visited only once
+// and intersections are visited only twice
+fn run_route(instructions: &HashMap<i64, i64>) -> i64 {
+    // Upon visual inspection, the route is
+    // R,10,R,10,R,6,R,4,R,10,R,10,L,4,R,10,R,10,R,6,R,4,R,4,L,4,L,10,L,10,R,10,R,10,R,6,
+    // R,4,R,10,R,10,L,4,R,4,L,4,L,10,L,10,R,10,R,10,L,4,R,4,L,4,L,10,L,10,R,10,R,10,L,4
 
-    let mut total: i32 = 0;
+    // A: R,10,R,10,R,6,R,4
+    // B: R,10,R,10,L,4
+    // C: R,4,L,4,L,10,L,10
 
-    for (&(i, j), &scaffold) in grid {
+    // A,B,A,C,A,B,C,B,C,B
 
-        if !scaffold { continue }
+    let a: &str = "R,10,R,10,R,6,R,4";
+    let b: &str = "R,10,R,10,L,4";
+    let c: &str = "R,4,L,4,L,10,L,10";
 
-        let left_right: bool = *grid.get(&(i, j-1)).unwrap_or(&false) && *grid.get(&(i, j+1)).unwrap_or(&false);
-        let up_down: bool = *grid.get(&(i-1, j)).unwrap_or(&false) && *grid.get(&(i+1, j)).unwrap_or(&false);
+    let routine: &str = "A,B,A,C,A,B,C,B,C,B";
 
-        if left_right && up_down {
-            total += i*j;
-        }
-
-    }
-
-    total
-}
-
-fn get_map(instructions: &HashMap<i64, i64>) -> (HashMap<(i32, i32), bool>, (i32, i32, i32)) {
     let mut robot = Robot {
         instructions: instructions.clone(),
         pointer: 0,
         inputs: VecDeque::new(),
         state: RobotState::WaitingOnInput,
-        relative_base: 0
+        relative_base: 0,
+    };
+
+    robot.instructions.insert(0, 2);
+
+    // Input movement instructions
+    for subroutine in [routine, a, b, c] {
+        for command in subroutine.chars() {
+            robot.inputs.push_back(command as u8 as i64);
+        }
+        robot.inputs.push_back(10);
+    }
+
+    // No playback
+    robot.inputs.push_back('n' as u8 as i64);
+    robot.inputs.push_back(10);
+
+    let output: Vec<i64> = robot.run();
+
+    *output.last().unwrap()
+}
+
+fn calculate_alignment_parameters(grid: &Vec<Vec<char>>) -> usize {
+    let mut total: usize = 0;
+
+    for i in 0..grid.len() {
+        for j in 0..grid[i].len() {
+            if grid[i][j] != '#' {
+                continue;
+            }
+
+            if i > 0
+                && i + 1 < grid.len()
+                && j > 0
+                && j + 1 < grid[i].len()
+                && grid[i - 1][j] == '#'
+                && grid[i + 1][j] == '#'
+                && grid[i][j - 1] == '#'
+                && grid[i][j + 1] == '#'
+            {
+                total += i * j;
+            }
+        }
+    }
+
+    total
+}
+
+fn get_map(instructions: &HashMap<i64, i64>) -> Vec<Vec<char>> {
+    let mut robot = Robot {
+        instructions: instructions.clone(),
+        pointer: 0,
+        inputs: VecDeque::new(),
+        state: RobotState::WaitingOnInput,
+        relative_base: 0,
     };
 
     let outputs: Vec<i64> = robot.run();
 
-    let mut grid: HashMap<(i32, i32), bool> = HashMap::new();
-    let mut i: i32 = 0;
-    let mut j: i32 = 0;
+    let grid_str: String = outputs.iter().map(|&o| o as u8 as char).collect();
 
-    let mut robot_start: (i32, i32, i32) = (0, 0, 0);
+    // Visual inspection used for solution
+    // Copy-pasted output to separate notepad and used ^,>,v,< to draw out path
+    // println!("{grid_str}");
 
-    let mut grid_str: String = String::new();
+    let mut grid: Vec<Vec<char>> = grid_str
+        .lines()
+        .map(|line| line.chars().collect())
+        .collect();
+    grid.pop(); // Removes last empty row
 
-    for o in outputs {
-        grid_str.push(o as u8 as char);
-        if o == 35 {
-            grid.insert((i, j), true);
-            j += 1;
-        } else if o == 46 {
-            grid.insert((i, j), false);
-            j += 1;
-        } else if o == 10 {
-            i += 1;
-            j = 0;
-        } else {
-            robot_start = (i, j, o as i32);
-            grid.insert((i, j), true);
-            j += 1;
-        }
-    }
-
-    println!("{grid_str}");
-
-    (grid, robot_start)
+    grid
 }
 
 #[derive(Clone)]
