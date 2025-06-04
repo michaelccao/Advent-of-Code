@@ -1,5 +1,4 @@
 use crate::helper::read_data;
-use std::collections::{HashMap, HashSet};
 
 pub fn main() {
     let data: String = read_data("../Data/Day16.txt");
@@ -9,53 +8,53 @@ pub fn main() {
 
     println!("{p1:?}");
 
-    println!("{:?}", calculate_digit(&signal, 8, 1, HashMap::new()).0);
-
-    let long_signal: Vec<Vec<i32>> = vec![signal.clone(); 10_000];
-
-    println!("{:?}", &long_fft(long_signal.clone())[0][0..8])
-}
-
-fn calculate_digit(signal: &Vec<i32>, digit: usize, layer: u32, mut cache: HashMap<(usize, u32), i32>) -> (i32, HashMap<(usize, u32), i32>) {
-
-    if let Some(out) = cache.get(&(digit, layer)) {
-        return (*out, cache)
-    } else if layer == 0 {
-        return (signal[digit % signal.len()], cache)
-    } else {
-        let place: usize = digit + 1;
-        let mut count: usize = 0;
-        let mut multiplier: i32 = 1;
-        let mut pointer = digit;
-        let mut total: i32 = 0;
-
-        while pointer < signal.len()*10_000 {
-            if count == place {
-                count = 0;
-                multiplier *= -1;
-                pointer += place;
-            } else {
-                let res =  calculate_digit(signal, pointer, layer-1, cache);
-
-                cache = res.1;
-                let sub = res.0;
-
-                total += sub*multiplier;
-
-                count += 1;
-                pointer += 1;
-            }
-        }
-
-        total *= total.signum();
-        total %= 10;
-
-        cache.insert((digit, layer), total);
-
-        return (total, cache)
+    let mut offset = 0;
+    for d in &signal[0..7] {
+        offset *= 10;
+        offset += d;
     }
 
+    // Digits greater than n/2 just sum all following digits
+    // Offset is well past n/2 and we can just transform the tail end
+    let mut tail: Vec<i32> = Vec::new();
 
+    for i in offset as usize..signal.len()*10000 {
+        tail.push(signal[i % signal.len()]);
+    }
+
+    println!("{:?}", &tail_fftn(&tail, 100)[0..8]);
+
+    
+}
+
+fn tail_fft(signal: &Vec<i32>) -> Vec<i32> {
+    // First digit is just sum of vector
+    // Second digit is sum minus first
+    // Third digit is sum minus first and second
+    // etc...
+    let mut signal2: Vec<i32> = Vec::new();
+
+    let mut current_value: i32 = signal.iter().sum();
+
+    signal2.push(current_value % 10);
+
+    for i in 1..signal.len() {
+        current_value -= signal[i-1];
+        signal2.push(current_value % 10);
+    }
+
+    signal2
+}
+
+fn tail_fftn(signal: &Vec<i32>, n: u32) -> Vec<i32> {
+    
+    let mut signal2: Vec<i32> = signal.clone();
+
+    for _ in 0..n {
+        signal2 = tail_fft(&signal2);
+    }
+
+    signal2
 }
 
 fn fft(mut signal: Vec<i32>) -> Vec<i32> {
@@ -94,43 +93,4 @@ fn fftn(mut signal: Vec<i32>, n: u32) -> Vec<i32> {
     }
 
     signal
-}
-
-fn long_fft(mut long_signal: Vec<Vec<i32>>) -> Vec<Vec<i32>> {
-    let num_digits = long_signal.len() * long_signal[0].len();
-
-    for i in 0..8 {
-        let mut pointer: usize = i + 1;
-        let mut count: usize = 1;
-        let mut multiplier: i32 = 1;
-
-        let row = i / long_signal[0].len();
-        let col = i % long_signal[0].len();
-        
-        while pointer < num_digits {
-
-            if count == i + 1 {
-                count = 0;
-                multiplier *= -1;
-                pointer += i + 1;
-            } else {
-                let row2 = pointer / long_signal[0].len();
-                let col2 = pointer % long_signal[0].len();
-
-                long_signal[row][col] += long_signal[row2][col2]*multiplier;
-
-                count += 1;
-                pointer += 1;
-            }
-
-
-            
-        }
-
-        long_signal[row][col] %= 10;
-        long_signal[row][col] *= long_signal[row][col].signum();
-
-    }
-
-    long_signal
 }
