@@ -9,3 +9,4 @@
 2019 Day 20 - Interesting part 2 maze solved with smarter caching
 2019 Day 21 - Interesting formal logic puzzling
 2019 Day 25 - Text-based RPG
+2020 Day 10 - Textbook DP problem, would be a good demo on DP
