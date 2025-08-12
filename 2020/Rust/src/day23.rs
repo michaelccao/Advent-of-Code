@@ -26,17 +26,15 @@ fn move_cups(cups: &Vec<u32>, moves: u32) -> String {
             target = 9;
         }
 
-
         let mut remove: Vec<u32> = Vec::new();
 
         for __ in 0..3 {
             if current + 1 < cups.len() {
-                remove.push(cups.remove(current+1));
+                remove.push(cups.remove(current + 1));
             } else {
                 remove.push(cups.remove(0));
                 current -= 1;
             }
-            
         }
 
         let remove_set: HashSet<&u32> = remove.iter().collect::<HashSet<_>>();
@@ -56,7 +54,7 @@ fn move_cups(cups: &Vec<u32>, moves: u32) -> String {
         }
 
         for __ in 0..3 {
-            cups.insert(target_ind+1,remove.pop().unwrap());
+            cups.insert(target_ind + 1, remove.pop().unwrap());
         }
 
         if target_ind < current {
@@ -71,7 +69,7 @@ fn move_cups(cups: &Vec<u32>, moves: u32) -> String {
     let mut i: usize = 0;
     let mut add: bool = false;
 
-    while cup_string.len() < cups.len()-1 {
+    while cup_string.len() < cups.len() - 1 {
         if add {
             cup_string.push(char::from_digit(cups[i], 10).unwrap());
         }
@@ -97,7 +95,7 @@ fn move_cups2(cups: &Vec<u32>, num_cups: usize, moves: u32) -> u64 {
         };
 
         let next: u32 = if i + 1 < cups.len() {
-            cups[i+1]
+            cups[i + 1]
         } else if i + 2 <= num_cups {
             i as u32 + 2
         } else {
