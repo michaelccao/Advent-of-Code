@@ -1,10 +1,16 @@
 use crate::helper::read_data;
-use std::collections::{HashMap, HashSet};
 
 pub fn main() {
     let data: String = read_data("../Data/Day03.txt");
 
-    let numbers: Vec<Vec<i32>> = data.lines().map(|line| line.chars().map(|c| c.to_digit(10).unwrap() as i32).collect()).collect();
+    let numbers: Vec<Vec<i32>> = data
+        .lines()
+        .map(|line| {
+            line.chars()
+                .map(|c| c.to_digit(10).unwrap() as i32)
+                .collect()
+        })
+        .collect();
 
     let p1: u32 = calculate_power(&numbers);
 
@@ -16,7 +22,7 @@ pub fn main() {
 }
 
 fn calculate_power(data: &Vec<Vec<i32>>) -> u32 {
-    let mut counts: Vec<i32> = vec![0;data[0].len()];
+    let mut counts: Vec<i32> = vec![0; data[0].len()];
 
     for num in data {
         for (i, digit) in num.iter().enumerate() {
@@ -24,13 +30,19 @@ fn calculate_power(data: &Vec<Vec<i32>>) -> u32 {
         }
     }
 
-    let gamma: String = counts.iter().map(|&c| if c >= data.len() as i32 /2  {'1'} else {'0'}).collect();
-    let epsilon: String = counts.iter().map(|&c| if c >= data.len() as i32 /2 {'0'} else {'1'}).collect();
+    let gamma: String = counts
+        .iter()
+        .map(|&c| if c >= data.len() as i32 / 2 { '1' } else { '0' })
+        .collect();
+    let epsilon: String = counts
+        .iter()
+        .map(|&c| if c >= data.len() as i32 / 2 { '0' } else { '1' })
+        .collect();
 
     let gamma: u32 = u32::from_str_radix(&gamma, 2).unwrap();
     let epsilon: u32 = u32::from_str_radix(&epsilon, 2).unwrap();
 
-    gamma*epsilon
+    gamma * epsilon
 }
 
 fn reduce_candidates(numbers: &Vec<Vec<i32>>, place: usize, common: bool) -> Vec<Vec<i32>> {
@@ -47,15 +59,15 @@ fn reduce_candidates(numbers: &Vec<Vec<i32>>, place: usize, common: bool) -> Vec
 
     if common {
         if ones.len() >= zeros.len() {
-            return ones
+            return ones;
         } else {
-            return zeros
+            return zeros;
         }
     } else {
         if zeros.len() <= ones.len() {
-            return zeros
+            return zeros;
         } else {
-            return ones
+            return ones;
         }
     }
 }
@@ -78,8 +90,8 @@ fn calculate_life_support(numbers: &Vec<Vec<i32>>) -> i32 {
         place += 1;
     }
 
-    let oxygen: i32 = oxygen[0].iter().fold(0, |acc, d| 2*acc + d);
-    let co2: i32 = co2[0].iter().fold(0, |acc, d| 2*acc + d);
+    let oxygen: i32 = oxygen[0].iter().fold(0, |acc, d| 2 * acc + d);
+    let co2: i32 = co2[0].iter().fold(0, |acc, d| 2 * acc + d);
 
-    oxygen*co2
+    oxygen * co2
 }
