@@ -12,3 +12,4 @@
 2020 Day 10 - Textbook DP problem, would be a good demo on DP
 2021 Day 1 - Good day 1 example with cute optimization
 2021 Day 6 - Neat DP with memo problem
+2021 Day 7 - Cute math problem
