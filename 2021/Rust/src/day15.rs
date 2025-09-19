@@ -1,5 +1,5 @@
 use crate::helper::read_data;
-use std::collections::HashMap;
+use std::collections::{BinaryHeap, HashMap};
 
 pub fn main() {
     let data: String = read_data("../Data/Day15.txt");
@@ -14,23 +14,20 @@ pub fn main() {
     println!("{p2}");
 }
 
-fn find_shortest_path(grid: &Vec<Vec<usize>>) -> usize {
-
-    let mut nodes: Vec<(usize, usize, usize)> = vec![(0, 0, 0)];
+fn find_shortest_path(grid:&Vec<Vec<usize>>) -> usize {
+    let mut nodes: BinaryHeap<(i32, usize, usize, usize)> = BinaryHeap::from([(0, 0, 0, 0)]);
 
     let mut shortest: usize = usize::MAX;
 
     let mut visited: HashMap<(usize, usize), usize> = HashMap::from([((0, 0), 0)]);
 
-    while nodes.len() > 0 {
-        let (i, j, cost) = nodes.pop().unwrap();
+    let dest_i: usize = grid.len() - 1;
+    let dest_j: usize = grid[0].len() - 1;
 
-        if i == grid.len() - 1 && j == grid[i].len() - 1 {
-            shortest = shortest.min(cost);
-        }
+    while let Some((_total_cost, base_cost, i, j)) = nodes.pop() {
 
-        if cost + grid.len() - i - 1 + grid[i].len() - j - 1 >= shortest {
-            continue;
+        if i == dest_i && j == dest_j {
+            shortest = shortest.min(base_cost);
         }
 
         let neighbors: [(usize, usize); 4] = [
@@ -42,15 +39,16 @@ fn find_shortest_path(grid: &Vec<Vec<usize>>) -> usize {
 
         for (i2, j2) in neighbors {
             if i2 < grid.len() && j2 < grid.len() {
-                let cost2 = cost + grid[i2][j2];
+                let base_cost2: usize = base_cost + grid[i2][j2];
+                let total_cost2: usize = base_cost2 + dest_i - i2 + dest_j - j2;
                 if let Some(&visited_cost) = visited.get(&(i2, j2)) {
-                    if cost2 < visited_cost {
-                        visited.insert((i2, j2), cost2);
-                        nodes.push((i2, j2, cost2));
+                    if total_cost2 < visited_cost {
+                        visited.insert((i2, j2), total_cost2);
+                        nodes.push(((total_cost2 as i32)*-1, base_cost2, i2, j2));
                     }
                 } else {
-                    visited.insert((i2, j2), cost2);
-                    nodes.push((i2, j2, cost2));
+                    visited.insert((i2, j2), total_cost2);
+                    nodes.push(((total_cost2 as i32)*-1, base_cost2, i2, j2));
                 }
             }
         }
