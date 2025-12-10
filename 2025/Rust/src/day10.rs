@@ -1,5 +1,5 @@
 use crate::helper::read_data;
-use std::collections::{HashMap, HashSet};
+use std::collections::{HashMap, HashSet, VecDeque};
 
 pub fn main() {
     let data: String = read_data("../Data/Day10.txt");
@@ -14,7 +14,9 @@ pub fn main() {
 
     // println!("{p2}");
 
-    test(&machines);
+    let p2: usize = set_joltage(&machines[2]);
+
+    println!("{p2}");
 }
 
 fn get_machines(data: &String) -> Vec<(Vec<bool>, Vec<Vec<usize>>, Vec<usize>)> {
@@ -95,9 +97,9 @@ fn light_up(machine: &(Vec<bool>, Vec<Vec<usize>>, Vec<usize>)) -> usize {
 fn set_joltage(machine: &(Vec<bool>, Vec<Vec<usize>>, Vec<usize>)) -> usize {
     let (_target_lights, buttons, joltage) = machine;
 
-    let mut nodes: Vec<(usize, Vec<usize>)> = Vec::new();
+    let mut nodes: VecDeque<(usize, Vec<usize>)> = VecDeque::new();
 
-    nodes.push((0, vec![0; joltage.len()]));
+    nodes.push_back((0, vec![0; joltage.len()]));
 
     let mut visited: HashMap<Vec<usize>, usize> = HashMap::new();
 
@@ -107,7 +109,8 @@ fn set_joltage(machine: &(Vec<bool>, Vec<Vec<usize>>, Vec<usize>)) -> usize {
 
     while nodes.len() > 0 {
 
-        let (pushes, j) = nodes.pop().unwrap();
+        let (pushes, j) = nodes.pop_back().unwrap();
+        println!("{pushes}, {j:?}");
 
         if j == *joltage {
             least_pushes = least_pushes.min(pushes);
@@ -136,7 +139,7 @@ fn set_joltage(machine: &(Vec<bool>, Vec<Vec<usize>>, Vec<usize>)) -> usize {
 
             if !visited.contains_key(&j2) || pushes + 1 < visited[&j2] {
                 visited.insert(j2.clone(), pushes+1);
-                nodes.push((pushes+1, j2));
+                nodes.push_back((pushes+1, j2));
             }
         }
 
